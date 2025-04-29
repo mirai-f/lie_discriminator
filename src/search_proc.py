@@ -1,14 +1,14 @@
 import time
+
 import numpy as np
 import pandas as pd
+from scipy.sparse import issparse
+from sklearn.metrics import classification_report
+from sklearn.model_selection import ParameterGrid, RandomizedSearchCV
+from sklearn.pipeline import Pipeline
 from tabulate import tabulate
 
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import classification_report
-from sklearn.model_selection import ParameterGrid
-from scipy.sparse import issparse
-from src.preprocessor import get_features_names_out
+from src.tfidf_preprocessor import get_features_names_out
 
 
 class SearchProc:
@@ -24,7 +24,9 @@ class SearchProc:
     при запуске метода self.run_proc()
     """
 
-    def __init__(self, model_class, param_grid, preprocessor, n_iter=100, scoring="f1", verbose=0):
+    def __init__(
+        self, model_class, param_grid, preprocessor, n_iter=100, scoring="f1", verbose=0
+    ):
         self.model_class = model_class
         self.param_grid = param_grid
 
@@ -39,11 +41,10 @@ class SearchProc:
         self.preprocessor = preprocessor
 
     def _create_pipeline(self):
-        return Pipeline([
-            ('preprocessor', self.preprocessor),
-            ('model', self.model_class())
-        ])
-        
+        return Pipeline(
+            [("preprocessor", self.preprocessor), ("model", self.model_class())]
+        )
+
     def _get_features_names_out(self, preprocessor):
         """Использована внешняя функция"""
         return np.array(get_features_names_out(preprocessor))
@@ -60,7 +61,7 @@ class SearchProc:
             cv=5,
             n_jobs=-1,
             verbose=self.verbose,
-            scoring=self.scoring
+            scoring=self.scoring,
         )
 
         self.search_model.fit(X_train, y_train)
@@ -86,43 +87,42 @@ class SearchProc:
     def print_search_results(self, top_n=3):
         cv_results = (
             pd.DataFrame(self.search_model.cv_results_)
-            .sort_values("mean_test_score", ascending=False)
-            [["mean_fit_time", "params", "mean_test_score"]]
-            .round({
-                "mean_fit_time": 2,
-                "mean_test_score": 4,
-                "std_test_score": 4
-            })
+            .sort_values("mean_test_score", ascending=False)[
+                ["mean_fit_time", "params", "mean_test_score"]
+            ]
+            .round({"mean_fit_time": 2, "mean_test_score": 4, "std_test_score": 4})
         )[:top_n]
         cv_results["params"] = cv_results["params"].apply(
             lambda x: "\n".join(f"{k}: {v}" for k, v in x.items())
         )
 
         print(f"Top {top_n} combinations:")
-        print(tabulate(
-            cv_results,
-            headers=cv_results.columns,
-            tablefmt="grid",
-            stralign="left",
-            numalign="center",
-            showindex=False
-        ))
+        print(
+            tabulate(
+                cv_results,
+                headers=cv_results.columns,
+                tablefmt="grid",
+                stralign="left",
+                numalign="center",
+                showindex=False,
+            )
+        )
         print()
 
     def print_top_features(self, top_n=5):
         model = self.model["model"]
 
-        if not hasattr(model, 'feature_importances_') and not hasattr(model, 'coef_'):
+        if not hasattr(model, "feature_importances_") and not hasattr(model, "coef_"):
             print("This model does not support feature importance extraction.")
             return
 
         features_names = self._get_features_names_out(self.preprocessor)
 
-        if hasattr(model, 'feature_importances_'):
+        if hasattr(model, "feature_importances_"):
             importances = model.feature_importances_
-        elif hasattr(model, 'coef_'):
+        elif hasattr(model, "coef_"):
             importances = model.coef_[0] if len(model.coef_.shape) > 1 else model.coef_
-        
+
         if issparse(importances):
             importances = importances.toarray().flatten()
 

@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.7.0
+    hooks:
+      - id: nbqa-black
+        args: ["--line-length=88"]
+        files: ".ipynb$"
+      - id: nbqa-isort
+        files: ".ipynb$"
+
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+        args: ["--line-length=88"]
+        files: ".py$"
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ".py$"
