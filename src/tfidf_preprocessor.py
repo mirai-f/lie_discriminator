@@ -50,13 +50,20 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
 
 
 def build_tfidf_preprocessor():
-    text_pipeline = make_pipeline(TextPreprocessor(), TfidfVectorizer())
-
-    features_pipeline = make_pipeline(FeatureExtractor(), StandardScaler())
-
-    tfidf_preprocessor = ColumnTransformer(
-        [("text", text_pipeline, "title"), ("features", features_pipeline, "title")]
+    text_pipeline = make_pipeline(
+        TextPreprocessor(), 
+        TfidfVectorizer()
     )
+
+    features_pipeline = make_pipeline(
+        FeatureExtractor(), 
+        StandardScaler()
+        )
+
+    tfidf_preprocessor = ColumnTransformer([
+        ("text", text_pipeline, "title"), 
+        ("features", features_pipeline, "title")
+    ])
 
     return tfidf_preprocessor
 
